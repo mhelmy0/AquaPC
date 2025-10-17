@@ -1,0 +1,12 @@
+# RTP Video Streaming Client - Python Dependencies
+
+# Core dependencies
+opencv-python>=4.8.0        # Video processing, display, and recording
+PyQt5>=5.15.0               # GUI framework
+PyYAML>=6.0                 # Configuration file parsing
+numpy>=1.24.0               # Array operations (required by OpenCV)
+
+# Optional dependencies for enhanced functionality
+# Uncomment if needed:
+# pillow>=10.0.0            # Additional image processing capabilities
+# psutil>=5.9.0             # System monitoring (CPU, memory usage)

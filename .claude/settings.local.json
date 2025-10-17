@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(if not exist src mkdir src)",
+      "Bash(if not exist recordings mkdir recordings)",
+      "Bash(if not exist snapshots mkdir snapshots)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
