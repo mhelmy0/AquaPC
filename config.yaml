@@ -24,8 +24,8 @@ stream:
 # Display settings
 display:
   window_title: "AquaCam Live Stream"
-  width: 1280                  # Display window width
-  height: 720                  # Display window height
+  width: 1920                  # Display window width (UPDATED to match stream)
+  height: 1080                 # Display window height (UPDATED to match stream)
   show_fps: true               # Show FPS counter
   show_bitrate: false          # Show bitrate (experimental)
   fullscreen: false            # Start in fullscreen mode
