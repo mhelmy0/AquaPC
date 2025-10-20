@@ -48,8 +48,19 @@ snapshot:
 # Advanced settings
 advanced:
   buffer_size: 1024            # Stream buffer size
-  reconnect_interval: 5        # Seconds between reconnection attempts
-  max_reconnect_attempts: 0    # 0 = infinite reconnection attempts
-  ffmpeg_path: "ffmpeg"        # Path to FFmpeg executable (or just "ffmpeg" if in PATH)
   frame_drop_threshold: 10     # Skip frames if queue exceeds this size
+  ffmpeg_path: "ffmpeg"        # Path to FFmpeg executable (or just "ffmpeg" if in PATH)
   log_level: "INFO"            # Logging level: DEBUG, INFO, WARNING, ERROR
+
+  # Stream reliability settings
+  stream_timeout: 10.0         # Seconds before declaring stream dead (increased for stability)
+  stream_health_check_interval: 2.0  # Seconds between health checks
+
+  # Reconnection settings
+  auto_reconnect: true         # Enable automatic reconnection
+  reconnect_interval: 5        # Seconds between reconnection attempts
+  max_reconnect_attempts: 10   # 0 = infinite, 10 = give up after 10 tries
+
+  # Recording settings
+  recording_async: true        # Use async recording (prevents blocking)
+  recording_queue_size: 100    # Frames to buffer for async recording
