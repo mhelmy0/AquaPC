@@ -158,8 +158,79 @@ class StreamReceiver:
         if self.on_disconnect:
             self.on_disconnect()
 
+    def _detect_stream_resolution(self) -> tuple:
+        """
+        Detect actual stream resolution from FFmpeg output
+
+        Returns:
+            Tuple of (width, height) or (None, None) if not detected
+        """
+        import re
+
+        detected_width = None
+        detected_height = None
+
+        # Give FFmpeg a moment to start
+        time.sleep(0.5)
+
+        # Try to read resolution from stderr (non-blocking check)
+        try:
+            # This is called from stderr monitoring thread now
+            # Just return configured resolution for now
+            # Detection happens in _monitor_ffmpeg_errors
+            return (self.width, self.height)
+        except Exception as e:
+            self._log_error(f"Error detecting resolution: {e}")
+            return (None, None)
+
+    def _validate_frame(self, frame: np.ndarray) -> bool:
+        """
+        Validate frame data integrity
+
+        Args:
+            frame: Frame array to validate
+
+        Returns:
+            True if frame appears valid, False otherwise
+        """
+        try:
+            # Check shape
+            if frame.shape != (self.height, self.width, 3):
+                self._log_error(f"Frame shape mismatch: {frame.shape} != ({self.height}, {self.width}, 3)")
+                return False
+
+            # Check data type
+            if frame.dtype != np.uint8:
+                self._log_error(f"Frame dtype mismatch: {frame.dtype} != uint8")
+                return False
+
+            # Check for all-zero frames (often indicates error)
+            if frame.max() == 0:
+                self._log_warning("Frame is all black (all zeros) - possible error")
+                return False
+
+            # Check for very low variance (likely corrupt or test pattern)
+            if frame.std() < 1.0:
+                self._log_warning(f"Frame has very low variance ({frame.std():.2f}) - possibly corrupt")
+                return False
+
+            # Check for unreasonable values (should all be 0-255 for uint8, but double-check)
+            if frame.min() < 0 or frame.max() > 255:
+                self._log_error(f"Frame has invalid pixel values: min={frame.min()}, max={frame.max()}")
+                return False
+
+            return True
+
+        except Exception as e:
+            self._log_error(f"Error validating frame: {e}")
+            return False
+
     def _monitor_ffmpeg_errors(self) -> None:
-        """Monitor FFmpeg stderr output for errors"""
+        """Monitor FFmpeg stderr output for errors and resolution detection"""
+        import re
+
+        resolution_detected = False
+
         while self.running and self.ffmpeg_process:
             try:
                 line = self.ffmpeg_process.stderr.readline()
@@ -167,6 +238,36 @@ class StreamReceiver:
                     break
 
                 line = line.decode('utf-8', errors='ignore').strip()
+
+                # Detect stream resolution from FFmpeg output
+                if not resolution_detected and 'Stream #' in line and 'Video:' in line:
+                    # Look for pattern like: Stream #0:0: Video: h264, yuv420p, 1920x1080
+                    match = re.search(r'(\d+)x(\d+)', line)
+                    if match:
+                        detected_width = int(match.group(1))
+                        detected_height = int(match.group(2))
+
+                        if detected_width != self.width or detected_height != self.height:
+                            self._log_error(
+                                f"RESOLUTION MISMATCH! Config: {self.width}x{self.height}, "
+                                f"Actual stream: {detected_width}x{detected_height}"
+                            )
+                            if self.logger:
+                                self.logger.log_error_event(
+                                    "RESOLUTION_MISMATCH",
+                                    f"Config: {self.width}x{self.height}, Stream: {detected_width}x{detected_height}",
+                                    "StreamReceiver"
+                                )
+                            # This is critical - stop the stream
+                            self.running = False
+                            if self.on_error:
+                                self.on_error(f"Resolution mismatch: expected {self.width}x{self.height}, got {detected_width}x{detected_height}")
+                        else:
+                            self._log_info(f"Resolution confirmed: {self.width}x{self.height}")
+                            if self.logger:
+                                self.logger.event("RESOLUTION_OK", f"{self.width}x{self.height}", "StreamReceiver")
+
+                        resolution_detected = True
 
                 # Log important FFmpeg messages
                 if 'error' in line.lower():
@@ -184,6 +285,10 @@ class StreamReceiver:
                     self._log_warning("FFmpeg: Packet corruption detected")
                 elif 'Invalid data' in line:
                     self._log_error("FFmpeg: Invalid stream data")
+                elif 'decode' in line.lower() and 'error' in line.lower():
+                    self._log_error(f"FFmpeg decoding error: {line}")
+                    if self.logger:
+                        self.logger.log_error_event("DECODE_ERROR", line, "StreamReceiver")
 
             except Exception as e:
                 if self.running:
@@ -262,9 +367,42 @@ class StreamReceiver:
                 # Reset error counter on successful frame
                 consecutive_errors = 0
 
-                # Convert raw bytes to numpy array
-                frame = np.frombuffer(raw_frame, dtype=np.uint8)
-                frame = frame.reshape((self.height, self.width, 3))
+                # Convert raw bytes to numpy array with error handling
+                try:
+                    frame = np.frombuffer(raw_frame, dtype=np.uint8)
+
+                    # Validate buffer size before reshape
+                    expected_size = self.height * self.width * 3
+                    if frame.size != expected_size:
+                        self._log_error(
+                            f"Frame buffer size mismatch: got {frame.size} bytes, "
+                            f"expected {expected_size} bytes for {self.width}x{self.height}x3"
+                        )
+                        if self.logger:
+                            self.logger.log_error_event(
+                                "BUFFER_SIZE_MISMATCH",
+                                f"Got {frame.size}, expected {expected_size}",
+                                "StreamReceiver"
+                            )
+                        continue
+
+                    frame = frame.reshape((self.height, self.width, 3))
+
+                    # Validate frame integrity (optional, can be disabled for performance)
+                    # Only validate every 30th frame to reduce CPU usage
+                    if self.frames_received % 30 == 0:
+                        if not self._validate_frame(frame):
+                            self._log_warning("Frame validation failed, skipping frame")
+                            continue
+
+                except ValueError as e:
+                    self._log_error(f"Frame reshape error: {e}")
+                    if self.logger:
+                        self.logger.log_error_event("RESHAPE_ERROR", str(e), "StreamReceiver")
+                    continue
+                except Exception as e:
+                    self._log_error(f"Frame conversion error: {e}", exc_info=True)
+                    continue
 
                 # Check queue size and drop frames if necessary
                 queue_size = self.frame_queue.qsize()
