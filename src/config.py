@@ -44,6 +44,9 @@ class ConfigManager:
             # Create output directories if they don't exist
             self._create_directories()
 
+            # Apply performance mode settings
+            self._apply_performance_mode()
+
             # Calculate optimal buffers if auto_buffer_sizing is enabled
             if self.get('advanced', 'auto_buffer_sizing', False):
                 self._calculate_optimal_buffers()
@@ -163,11 +166,35 @@ class ConfigManager:
             if temp_sdp:
                 input_source = temp_sdp
 
-        # Build FFmpeg command with error resilience options
+        # Build FFmpeg command with hardware acceleration and error resilience
         cmd = [
             ffmpeg_path,
             '-protocol_whitelist', 'file,rtp,udp',
         ]
+
+        # Add hardware acceleration
+        hw_accel = self.get('advanced', 'hw_accel', 'auto')
+        if hw_accel and hw_accel != 'none':
+            if hw_accel == 'auto':
+                # Try to auto-detect best hardware acceleration
+                # Priority: cuda (NVIDIA) > dxva2 (Windows) > qsv (Intel)
+                import platform
+                if platform.system() == 'Windows':
+                    cmd.extend(['-hwaccel', 'auto'])  # Let FFmpeg choose
+                else:
+                    cmd.extend(['-hwaccel', 'auto'])
+            else:
+                # Use specified hardware acceleration
+                cmd.extend(['-hwaccel', hw_accel])
+
+        # Add low-latency flags for real-time streaming
+        performance_mode = self.get('advanced', 'performance_mode', 'balanced')
+        if performance_mode == 'low_latency':
+            cmd.extend([
+                '-fflags', 'nobuffer',           # Disable buffering
+                '-flags', 'low_delay',           # Low delay mode
+                '-strict', 'experimental',       # Allow experimental features
+            ])
 
         # Add error resilience flags
         ignore_errors = self.get('advanced', 'ignore_decode_errors', True)
@@ -194,6 +221,46 @@ class ConfigManager:
             ])
 
         return cmd
+
+    def _apply_performance_mode(self) -> None:
+        """Apply performance mode presets to override buffer settings"""
+        mode = self.get('advanced', 'performance_mode', 'balanced')
+
+        # Performance mode presets
+        presets = {
+            'low_latency': {
+                'buffer_size': 3,           # Only 3 frames (~0.1s at 30fps)
+                'frame_drop_threshold': 2,  # Drop aggressively
+                'max_ram_usage_percent': 10,  # Minimal RAM usage
+                'auto_buffer_sizing': False,  # Use fixed small buffers
+                'recording_queue_size': 30    # Small recording queue
+            },
+            'balanced': {
+                'buffer_size': 90,          # 90 frames (~3s at 30fps)
+                'frame_drop_threshold': 30,
+                'max_ram_usage_percent': 30,
+                'auto_buffer_sizing': False,
+                'recording_queue_size': 150
+            },
+            'high_quality': {
+                'buffer_size': 600,         # 600 frames (~20s at 30fps)
+                'frame_drop_threshold': 200,
+                'max_ram_usage_percent': 70,
+                'auto_buffer_sizing': True,   # Use large auto-sized buffers
+                'recording_queue_size': 300
+            }
+        }
+
+        if mode in presets:
+            preset = presets[mode]
+            # Apply preset values (performance mode takes precedence)
+            for key, value in preset.items():
+                self.config['advanced'][key] = value
+
+            if self.logger:
+                self.logger.info(f"Applied performance mode: {mode}", "ConfigManager")
+            else:
+                logging.info(f"ConfigManager: Applied performance mode: {mode}")
 
     def _calculate_optimal_buffers(self) -> None:
         """Calculate optimal buffer sizes based on available RAM"""

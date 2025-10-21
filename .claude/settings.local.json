@@ -1,14 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)",
-      "Bash(if not exist src mkdir src)",
-      "Bash(if not exist recordings mkdir recordings)",
-      "Bash(if not exist snapshots mkdir snapshots)",
-      "Bash(git init:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(python test_memory_manager.py)"
+      "Bash(python -c \"from src.config import ConfigManager; c = ConfigManager(''config.yaml''); print(''=== LOW LATENCY CONFIGURATION ===''); print(f''Performance Mode: {c.get(\"\"advanced\"\", \"\"performance_mode\"\")}''); print(f''Frame Buffer: {c.get_buffer_size()} frames''); print(f''Frame Drop Threshold: {c.get(\"\"advanced\"\", \"\"frame_drop_threshold\"\")}''); print(f''Recording Queue: {c.get_recording_queue_size()} frames''); print(f''Auto Buffer Sizing: {c.get(\"\"advanced\"\", \"\"auto_buffer_sizing\"\")}''); print(f''HW Acceleration: {c.get(\"\"advanced\"\", \"\"hw_accel\"\")}''); print(); latency = c.get_buffer_size() / 30.0; print(f''Expected Latency: ~{latency*1000:.0f}ms ({latency:.2f}s) at 30fps''); print(); print(''Status: ✓ LOW LATENCY MODE ACTIVE'' if latency < 1.0 else ''Status: ✗ HIGH LATENCY'')\")"
     ],
     "deny": [],
     "ask": []

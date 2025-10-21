@@ -47,11 +47,21 @@ snapshot:
 
 # Advanced settings
 advanced:
+  # Performance mode: "low_latency", "balanced", or "high_quality"
+  # - low_latency: Minimal delay (~0.5-1s), small buffers, aggressive frame dropping, GPU decode
+  # - balanced: Moderate delay (~3-5s), medium buffers, some frame dropping
+  # - high_quality: Higher delay (~10-20s), large buffers, minimal frame dropping
+  performance_mode: "low_latency"
+
   # Buffer configuration
   auto_buffer_sizing: true     # Enable automatic buffer sizing based on available RAM
   max_ram_usage_percent: 70    # Maximum percentage of free RAM to use (when auto_buffer_sizing is true)
   buffer_size: 1024            # Stream buffer size (used when auto_buffer_sizing is false)
-  frame_drop_threshold: 10     # Skip frames if queue exceeds this size
+  frame_drop_threshold: 10     # Skip frames if queue exceeds this size (overridden by performance_mode)
+
+  # Hardware acceleration (recommended for low latency)
+  hw_accel: "auto"             # Hardware acceleration: "auto", "cuda", "dxva2", "qsv", "none"
+
   ffmpeg_path: "ffmpeg"        # Path to FFmpeg executable (or just "ffmpeg" if in PATH)
   log_level: "INFO"            # Logging level: DEBUG, INFO, WARNING, ERROR
 

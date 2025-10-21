@@ -294,9 +294,31 @@ class VideoStreamApp(QMainWindow):
         # Stream statistics
         if self.stream_receiver and self.is_connected:
             stats = self.stream_receiver.get_stats()
-            info_parts.append(f"Queue: {stats['queue_size']}")
+
+            # Queue size
+            queue_size = stats['queue_size']
+            info_parts.append(f"Queue: {queue_size}")
+
+            # Calculate approximate latency based on queue size (at 30 FPS)
+            latency_sec = queue_size / 30.0
+            if latency_sec > 1.0:
+                info_parts.append(f"Latency: ~{latency_sec:.1f}s")
+            else:
+                info_parts.append(f"Latency: ~{latency_sec*1000:.0f}ms")
+
+            # Dropped frames
             if stats['frames_dropped'] > 0:
                 info_parts.append(f"Dropped: {stats['frames_dropped']}")
+
+        # Performance mode indicator
+        perf_mode = self.config.get('advanced', 'performance_mode', 'balanced')
+        mode_short = {'low_latency': 'LL', 'balanced': 'BAL', 'high_quality': 'HQ'}.get(perf_mode, perf_mode)
+        info_parts.append(f"Mode: {mode_short}")
+
+        # GPU acceleration status
+        hw_accel = self.config.get('advanced', 'hw_accel', 'none')
+        if hw_accel and hw_accel != 'none':
+            info_parts.append(f"GPU: {hw_accel}")
 
         # Memory usage (if auto buffer sizing is enabled)
         if self.config.get('advanced', 'auto_buffer_sizing', False):
