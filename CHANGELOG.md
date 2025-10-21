@@ -2,6 +2,84 @@
 
 All notable changes to the RTP Video Streaming Client project will be documented in this file.
 
+## [1.3.0] - 2025-10-22
+
+### Added
+
+#### Automatic Buffer Sizing (Memory Optimization)
+- **MemoryManager Module** ([src/memory_manager.py](src/memory_manager.py:1))
+  - Automatic RAM detection using `psutil`
+  - Dynamic buffer size calculation based on available RAM
+  - Configurable RAM usage percentage (default: 70%)
+  - Safety limits to prevent excessive memory allocation
+  - Memory health monitoring
+  - Buffer utilization statistics
+
+- **Auto Buffer Configuration** ([config.yaml](config.yaml:51-52))
+  - `auto_buffer_sizing: true` - Enable/disable automatic buffer sizing
+  - `max_ram_usage_percent: 70` - Configure RAM usage percentage
+  - Automatic allocation across three buffer types:
+    - Frame buffer (60% of allocated RAM)
+    - Recording queue (30% of allocated RAM)
+    - UDP buffer (10% of allocated RAM)
+
+- **ConfigManager Enhancements** ([src/config.py](src/config.py:198-258))
+  - Integration with MemoryManager
+  - Automatic buffer calculation on config load
+  - New methods: `get_buffer_size()`, `get_recording_queue_size()`, `get_udp_buffer_size()`
+  - Fallback to manual config values if auto-sizing disabled
+
+- **GUI Memory Monitoring** ([src/video_display.py](src/video_display.py:301-308))
+  - Real-time RAM usage display in status bar
+  - Shows system RAM percentage when auto buffer sizing enabled
+  - Example: "Status: Connected | FPS: 30.0 | Queue: 45 | RAM: 62.3%"
+
+- **Documentation**
+  - [MEMORY_OPTIMIZATION.md](MEMORY_OPTIMIZATION.md:1) - Comprehensive memory optimization guide
+  - Configuration examples
+  - Performance impact analysis
+  - Troubleshooting guide
+  - Technical details
+
+### Changed
+
+- **requirements.txt** - Added `psutil>=5.9.0` for RAM monitoring
+- **README.md** - Updated feature list to include auto buffer sizing
+- **Video display** - Integrated auto-calculated buffers for StreamReceiver and Recorder
+
+### Technical Details
+
+#### Buffer Size Calculation
+
+For a system with 8 GB RAM and 4 GB available:
+- **Usable RAM**: 4 GB × 70% = 2.8 GB
+- **Frame Buffer**: 2.8 GB × 60% = 1.68 GB (~270 frames at 1920×1080)
+- **Recording Queue**: 2.8 GB × 30% = 840 MB (~135 frames at 1920×1080)
+- **UDP Buffer**: 2.8 GB × 10% = 280 MB
+
+#### Safety Limits
+
+**Minimums:**
+- Frame buffer: 100 frames
+- Recording queue: 50 frames
+- UDP buffer: 64 KB
+
+**Maximums:**
+- Frame buffer: 10,000 frames
+- Recording queue: 5,000 frames
+- UDP buffer: 64 MB
+
+### Benefits
+
+1. **Reduced Frame Drops** - Larger buffers handle network bursts better
+2. **Smoother Playback** - More frames buffered for consistent display
+3. **Better Recording Performance** - Larger recording queue prevents blocking
+4. **Network Resilience** - Bigger UDP buffer handles packet bursts
+5. **Automatic Tuning** - No manual configuration needed
+6. **Adaptive Performance** - Scales with available system resources
+
+---
+
 ## [1.0.0] - 2025-01-17
 
 ### Added

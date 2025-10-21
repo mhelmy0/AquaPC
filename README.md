@@ -7,11 +7,15 @@ A lightweight, scalable Python application for receiving and displaying live H.2
 - **Live Stream Display**: Receive and display RTP H.264 video in real-time with minimal latency
 - **Recording**: Start/stop recording to video file (MP4, MKV, AVI) on demand
 - **Snapshot Capture**: Take snapshots from the live stream at any time
+- **Auto Buffer Sizing**: Automatically allocates up to 70% of free RAM for optimal buffering
+- **Network Resilience**: Handles packet loss and network errors gracefully
+- **Auto-Reconnect**: Automatic reconnection with health monitoring
 - **Simple GUI**: Clean interface with PyQt5 showing:
   - Live video feed
   - Connection status
   - Recording controls and status
   - FPS counter and statistics
+  - Real-time RAM usage monitoring
 - **Cross-platform**: Works on Windows, Linux, and macOS
 - **Configurable**: Easy YAML configuration for all settings
 - **Scalable Architecture**: Clean, modular design for easy extension
@@ -29,6 +33,7 @@ A lightweight, scalable Python application for receiving and displaying live H.2
   - PyQt5 >= 5.15.0
   - PyYAML >= 6.0
   - numpy >= 1.24.0
+  - psutil >= 5.9.0 (for auto buffer sizing)
 
 ### Server Configuration
 

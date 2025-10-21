@@ -6,21 +6,24 @@ Handles loading and accessing configuration from YAML file
 import yaml
 import os
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 class ConfigManager:
     """Manages application configuration from YAML file"""
 
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config.yaml", logger=None):
         """
         Initialize configuration manager
 
         Args:
             config_path: Path to YAML configuration file
+            logger: Optional logger instance
         """
         self.config_path = config_path
         self.config: Dict[str, Any] = {}
+        self.logger = logger
+        self.optimal_buffers: Optional[Dict[str, int]] = None
         self.load_config()
 
     def load_config(self) -> None:
@@ -40,6 +43,10 @@ class ConfigManager:
 
             # Create output directories if they don't exist
             self._create_directories()
+
+            # Calculate optimal buffers if auto_buffer_sizing is enabled
+            if self.get('advanced', 'auto_buffer_sizing', False):
+                self._calculate_optimal_buffers()
 
             logging.info(f"Configuration loaded successfully from {self.config_path}")
 
@@ -170,8 +177,8 @@ class ConfigManager:
                 '-err_detect', 'ignore_err',      # Ignore decoding errors
             ])
 
-        # Add UDP buffer size if specified
-        udp_buffer = self.get('advanced', 'udp_buffer_size', None)
+        # Add UDP buffer size (auto-calculated or from config)
+        udp_buffer = self.get_udp_buffer_size()
         if udp_buffer:
             cmd.extend(['-buffer_size', str(udp_buffer)])
 
@@ -187,6 +194,68 @@ class ConfigManager:
             ])
 
         return cmd
+
+    def _calculate_optimal_buffers(self) -> None:
+        """Calculate optimal buffer sizes based on available RAM"""
+        try:
+            from src.memory_manager import get_optimal_buffers
+
+            frame_width = self.get('display', 'width', 1920)
+            frame_height = self.get('display', 'height', 1080)
+            max_ram_percent = self.get('advanced', 'max_ram_usage_percent', 70)
+
+            self.optimal_buffers = get_optimal_buffers(
+                frame_width=frame_width,
+                frame_height=frame_height,
+                max_ram_percent=max_ram_percent,
+                logger=self.logger
+            )
+
+            if self.logger:
+                self.logger.info(f"Auto buffer sizing enabled: Using {self.optimal_buffers['total_memory_mb']:.1f} MB", "ConfigManager")
+            else:
+                logging.info(f"ConfigManager: Auto buffer sizing enabled: Using {self.optimal_buffers['total_memory_mb']:.1f} MB")
+
+        except Exception as e:
+            error_msg = f"Failed to calculate optimal buffers: {e}. Using default values."
+            if self.logger:
+                self.logger.warning(error_msg, "ConfigManager")
+            else:
+                logging.warning(f"ConfigManager: {error_msg}")
+            self.optimal_buffers = None
+
+    def get_buffer_size(self) -> int:
+        """
+        Get frame buffer size (auto-calculated or from config)
+
+        Returns:
+            Frame buffer size
+        """
+        if self.optimal_buffers:
+            return self.optimal_buffers['frame_buffer_size']
+        return self.get('advanced', 'buffer_size', 1024)
+
+    def get_recording_queue_size(self) -> int:
+        """
+        Get recording queue size (auto-calculated or from config)
+
+        Returns:
+            Recording queue size
+        """
+        if self.optimal_buffers:
+            return self.optimal_buffers['recording_queue_size']
+        return self.get('advanced', 'recording_queue_size', 100)
+
+    def get_udp_buffer_size(self) -> int:
+        """
+        Get UDP buffer size (auto-calculated or from config)
+
+        Returns:
+            UDP buffer size in bytes
+        """
+        if self.optimal_buffers:
+            return self.optimal_buffers['udp_buffer_size']
+        return self.get('advanced', 'udp_buffer_size', 65536)
 
     def __repr__(self) -> str:
         """String representation of configuration"""

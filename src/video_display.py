@@ -116,14 +116,17 @@ class VideoStreamApp(QMainWindow):
 
     def init_components(self):
         """Initialize stream receiver, recorder, and snapshot manager"""
-        # Initialize recorder
+        # Initialize recorder with auto-calculated buffer sizes
         recording_config = self.config.get_section('recording')
+        recording_queue_size = self.config.get_recording_queue_size()  # Uses auto-calculated or config value
         self.recorder = Recorder(
             output_dir=recording_config.get('output_dir', './recordings'),
             filename_pattern=recording_config.get('filename_pattern', 'recording_%Y%m%d_%H%M%S'),
             format=recording_config.get('format', 'mp4'),
             codec=recording_config.get('codec', 'h264'),
-            fps=recording_config.get('fps', 30)
+            fps=recording_config.get('fps', 30),
+            async_write=self.config.get('advanced', 'recording_async', True),
+            write_queue_size=recording_queue_size
         )
 
         # Initialize snapshot manager
@@ -159,10 +162,10 @@ class VideoStreamApp(QMainWindow):
             # Get stream parameters
             width = self.config.get('display', 'width', 1280)
             height = self.config.get('display', 'height', 720)
-            buffer_size = self.config.get('advanced', 'buffer_size', 10)
+            buffer_size = self.config.get_buffer_size()  # Uses auto-calculated or config value
             frame_drop_threshold = self.config.get('advanced', 'frame_drop_threshold', 10)
 
-            # Build FFmpeg command
+            # Build FFmpeg command (uses auto-calculated UDP buffer if enabled)
             ffmpeg_cmd = self.config.get_ffmpeg_command()
 
             # Create stream receiver
@@ -294,6 +297,15 @@ class VideoStreamApp(QMainWindow):
             info_parts.append(f"Queue: {stats['queue_size']}")
             if stats['frames_dropped'] > 0:
                 info_parts.append(f"Dropped: {stats['frames_dropped']}")
+
+        # Memory usage (if auto buffer sizing is enabled)
+        if self.config.get('advanced', 'auto_buffer_sizing', False):
+            try:
+                import psutil
+                mem = psutil.virtual_memory()
+                info_parts.append(f"RAM: {mem.percent:.1f}%")
+            except:
+                pass  # psutil may not be installed
 
         self.info_label.setText(" | ".join(info_parts))
 
