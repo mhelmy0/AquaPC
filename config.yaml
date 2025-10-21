@@ -38,7 +38,7 @@ recording:
   format: "mp4"                # Output format: mp4, mkv, avi
   codec: "h264"                # Codec: h264, copy (no re-encode)
   filename_pattern: "recording_%Y%m%d_%H%M%S"  # Timestamp pattern
-  fps: 30                      # Recording frame rate
+  fps: 20                      # Recording frame rate
 
 # Snapshot settings
 snapshot:
