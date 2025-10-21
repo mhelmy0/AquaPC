@@ -156,16 +156,33 @@ class ConfigManager:
             if temp_sdp:
                 input_source = temp_sdp
 
+        # Build FFmpeg command with error resilience options
         cmd = [
             ffmpeg_path,
             '-protocol_whitelist', 'file,rtp,udp',
-            '-i', input_source,
         ]
+
+        # Add error resilience flags
+        ignore_errors = self.get('advanced', 'ignore_decode_errors', True)
+        if ignore_errors:
+            cmd.extend([
+                '-fflags', '+genpts+igndts',     # Generate PTS, ignore DTS errors
+                '-err_detect', 'ignore_err',      # Ignore decoding errors
+            ])
+
+        # Add UDP buffer size if specified
+        udp_buffer = self.get('advanced', 'udp_buffer_size', None)
+        if udp_buffer:
+            cmd.extend(['-buffer_size', str(udp_buffer)])
+
+        # Add input source
+        cmd.extend(['-i', input_source])
 
         if output_format == "rawvideo":
             cmd.extend([
                 '-f', 'rawvideo',
                 '-pix_fmt', 'bgr24',
+                '-vf', 'setpts=PTS-STARTPTS',   # Reset timestamps
                 '-'  # Output to stdout
             ])
 

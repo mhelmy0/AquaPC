@@ -64,3 +64,7 @@ advanced:
   # Recording settings
   recording_async: true        # Use async recording (prevents blocking)
   recording_queue_size: 100    # Frames to buffer for async recording
+
+  # Packet loss / Network resilience settings
+  ignore_decode_errors: true   # Continue on H.264 decode errors (packet loss)
+  udp_buffer_size: 65536       # UDP receive buffer size (64KB, helps with bursts)
