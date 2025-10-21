@@ -24,8 +24,10 @@ stream:
 # Display settings
 display:
   window_title: "AquaCam Live Stream"
-  width: 1920                  # Display window width (UPDATED to match stream)
-  height: 1080                 # Display window height (UPDATED to match stream)
+  # width: 1920                  # Display window width (UPDATED to match stream)
+  # height: 1080                 # Display window height (UPDATED to match stream)
+  width: 1280                  # Display window width (UPDATED to match stream)
+  height: 720                 # Display window height (UPDATED to match stream)
   show_fps: true               # Show FPS counter
   show_bitrate: false          # Show bitrate (experimental)
   fullscreen: false            # Start in fullscreen mode
@@ -51,13 +53,16 @@ advanced:
   # - low_latency: Minimal delay (~0.5-1s), small buffers, aggressive frame dropping, GPU decode
   # - balanced: Moderate delay (~3-5s), medium buffers, some frame dropping
   # - high_quality: Higher delay (~10-20s), large buffers, minimal frame dropping
-  performance_mode: "low_latency"
+  # Set to null to use custom settings below
+  performance_mode: null
 
-  # Buffer configuration
-  auto_buffer_sizing: true     # Enable automatic buffer sizing based on available RAM
-  max_ram_usage_percent: 70    # Maximum percentage of free RAM to use (when auto_buffer_sizing is true)
-  buffer_size: 1024            # Stream buffer size (used when auto_buffer_sizing is false)
-  frame_drop_threshold: 10     # Skip frames if queue exceeds this size (overridden by performance_mode)
+  # Custom Ultra-Low Latency Configuration (400ms target, minimal drops)
+  # These settings override performance_mode when it's set to null
+  auto_buffer_sizing: false    # Use fixed buffers for precise control
+  buffer_size: 12              # 12 frames @ 30fps = 400ms latency
+  frame_drop_threshold: 15     # Start dropping when queue > 15 (allows some buffering)
+  max_ram_usage_percent: 10    # Minimal RAM usage
+  recording_queue_size: 60     # 2 seconds for recording buffer
 
   # Hardware acceleration (recommended for low latency)
   hw_accel: "auto"             # Hardware acceleration: "auto", "cuda", "dxva2", "qsv", "none"
@@ -76,7 +81,7 @@ advanced:
 
   # Recording settings
   recording_async: true        # Use async recording (prevents blocking)
-  recording_queue_size: 100    # Frames to buffer for async recording (used when auto_buffer_sizing is false)
+  recording_queue_size: 60     # Frames to buffer for async recording (2s @ 30fps, overridden by custom setting above)
 
   # Packet loss / Network resilience settings
   ignore_decode_errors: true   # Continue on H.264 decode errors (packet loss)

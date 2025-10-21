@@ -251,7 +251,7 @@ class ConfigManager:
             }
         }
 
-        if mode in presets:
+        if mode and mode in presets:
             preset = presets[mode]
             # Apply preset values (performance mode takes precedence)
             for key, value in preset.items():
@@ -261,6 +261,12 @@ class ConfigManager:
                 self.logger.info(f"Applied performance mode: {mode}", "ConfigManager")
             else:
                 logging.info(f"ConfigManager: Applied performance mode: {mode}")
+        elif mode is None:
+            # Custom mode - user has set manual values in config
+            if self.logger:
+                self.logger.info("Using custom performance settings (performance_mode: null)", "ConfigManager")
+            else:
+                logging.info("ConfigManager: Using custom performance settings (performance_mode: null)")
 
     def _calculate_optimal_buffers(self) -> None:
         """Calculate optimal buffer sizes based on available RAM"""
