@@ -1,8 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c \"import yaml; config = yaml.safe_load(open(''config.yaml'')); print(f\"\"Config value: {config[''advanced''].get(''recording_queue_size'')}\"\")\")",
-      "Bash(python -c \"from src.config import ConfigManager; c = ConfigManager(''config.yaml''); print(''=== FINAL ULTRA-LOW LATENCY CONFIGURATION ===''); print(); print(''TARGET: 400ms latency with minimal frame drops''); print(); print(''Configuration:''); print(f''  Frame Buffer:        {c.get_buffer_size()} frames''); print(f''  Frame Drop Threshold: {c.get(\"\"advanced\"\", \"\"frame_drop_threshold\"\")} frames''); print(f''  Recording Queue:     {c.get_recording_queue_size()} frames''); print(f''  GPU Acceleration:    {c.get(\"\"advanced\"\", \"\"hw_accel\"\")}''); print(); latency_ms = c.get_buffer_size() / 30.0 * 1000; rec_buffer_sec = c.get_recording_queue_size() / 30.0; print(''Calculated Performance:''); print(f''  Expected Latency:    ~{latency_ms:.0f}ms ({latency_ms/1000:.1f}s)''); print(f''  Recording Buffer:    {rec_buffer_sec:.1f}s''); print(f''  Drop Overhead:       {c.get(\"\"advanced\"\", \"\"frame_drop_threshold\"\") - c.get_buffer_size()} frames''); print(); print(''Comparison to Previous Modes:''); print(''  vs 100ms mode:    4x more buffer, fewer drops''); print(''  vs Balanced (3s): 7.5x lower latency''); print(''  vs Old (17s):     42x lower latency!''); print(); print(''Expected Behavior:''); print(''  ✓ Real-time with <500ms delay''); print(''  ✓ Minimal frame drops (15 frame threshold)''); print(''  ✓ Handles network bursts (3 frame overhead)''); print(''  ✓ GPU hardware acceleration''); print(''  ✓ 2 second recording buffer'')\")"
+      "Bash(git remote add origin git@github.com:mhelmy0/AquaPC.git)",
+      "Bash(git branch -M main)",
+      "Bash(git push -u origin main)",
+      "Bash(git remote set-url origin https://github.com/mhelmy0/AquaPC.git)",
+      "Bash(git mv ARCHITECTURE.md CHANGELOG.md DECODING_ISSUES_ANALYSIS.md DIAGNOSTIC_REPORT.md FIXES_APPLIED.md LOW_LATENCY_GUIDE.md MEMORY_BUFFER_FEATURE_SUMMARY.md MEMORY_OPTIMIZATION.md PACKET_CORRUPTION_FIX.md PROJECT_SUMMARY.md QUICK_FIX_SUMMARY.md QUICKSTART.md RESOLUTION_FIX.md TROUBLESHOOTING_QUICK_REFERENCE.md ULTRA_LOW_LATENCY_CONFIG.md WINDOWS_COMMANDS.md docs/)"
     ],
     "deny": [],
     "ask": []

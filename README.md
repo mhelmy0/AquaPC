@@ -361,22 +361,37 @@ Create multiple `StreamReceiver` instances with different configurations.
 
 Modify FFmpeg command to include audio streams and use PyAudio for playback.
 
+## Documentation
+
+Complete documentation is available in the [docs/](docs/) directory:
+
+### Quick Start
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - 5-minute setup guide
+
+### Configuration & Optimization
+- **[docs/LOW_LATENCY_GUIDE.md](docs/LOW_LATENCY_GUIDE.md)** - Complete low latency optimization guide
+- **[docs/ULTRA_LOW_LATENCY_CONFIG.md](docs/ULTRA_LOW_LATENCY_CONFIG.md)** - Current 400ms configuration
+- **[docs/MEMORY_OPTIMIZATION.md](docs/MEMORY_OPTIMIZATION.md)** - Memory buffer optimization
+
+### Troubleshooting
+- **[docs/TROUBLESHOOTING_QUICK_REFERENCE.md](docs/TROUBLESHOOTING_QUICK_REFERENCE.md)** - Quick troubleshooting guide
+- **[docs/WINDOWS_COMMANDS.md](docs/WINDOWS_COMMANDS.md)** - Windows PowerShell commands
+- **[docs/QUICK_FIX_SUMMARY.md](docs/QUICK_FIX_SUMMARY.md)** - Summary of fixes
+
+### Technical
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical architecture
+- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version history
+- **[docs/README.md](docs/README.md)** - Full documentation index
+
 ## Performance Tips
 
-1. **Reduce Latency**:
-   - Lower `buffer_size` in config (e.g., 5 instead of 10)
-   - Increase `frame_drop_threshold`
-   - Use wired network connection
+**For detailed optimization, see [docs/LOW_LATENCY_GUIDE.md](docs/LOW_LATENCY_GUIDE.md)**
 
-2. **Save CPU**:
-   - Use `codec: "copy"` in recording settings (no re-encoding)
-   - Disable FPS display if not needed
-   - Reduce display resolution
-
-3. **Network Optimization**:
-   - Use QoS settings on router
-   - Dedicate bandwidth for streaming
-   - Reduce server bitrate if needed
+Quick tips:
+1. **Ultra-Low Latency**: See [docs/ULTRA_LOW_LATENCY_CONFIG.md](docs/ULTRA_LOW_LATENCY_CONFIG.md)
+2. **GPU Acceleration**: Set `hw_accel: "auto"` in config (enabled by default)
+3. **Network**: Use wired Ethernet for best performance
+4. **Memory**: Adjust `performance_mode` in config (low_latency/balanced/high_quality)
 
 ## License
 
